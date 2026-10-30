@@ -1,19 +1,33 @@
 function resolveApiBase() {
+  const DEFAULT_RENDER_BACKEND = "https://nyaya-ai-backend-cibp.onrender.com";
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) {
-    const cleanUrl = envUrl.trim().replace(/\/$/, "");
-    const fullUrl = cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")
-      ? cleanUrl
-      : `https://${cleanUrl}`;
-    return `${fullUrl}/api`;
+  
+  if (envUrl && envUrl.trim()) {
+    let clean = envUrl.trim().replace(/\/$/, "");
+    let hostPart = clean.replace(/^https?:\/\//, "").replace(/\/api$/, "");
+    
+    // If Render fromService or user injected a service slug without a domain (e.g. "nyaya-ai-backend-cibp")
+    // and it is not localhost / 127.0.0.1, append .onrender.com
+    if (!hostPart.includes(".") && hostPart !== "localhost" && hostPart !== "127.0.0.1") {
+      hostPart = `${hostPart}.onrender.com`;
+    }
+    
+    const proto = (hostPart.startsWith("localhost") || hostPart.startsWith("127.0.0.1")) ? "http" : "https";
+    return `${proto}://${hostPart}/api`;
   }
-  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-    return "/api";
+  
+  // If no envUrl is provided, but we are running in the browser on a production domain (e.g. *.onrender.com)
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `${DEFAULT_RENDER_BACKEND}/api`;
+    }
   }
+  
   return "http://127.0.0.1:8000/api";
 }
 
-const API_BASE = resolveApiBase();
+export const API_BASE = resolveApiBase();
 
 function getAuthHeader() {
   const token = localStorage.getItem("nyaya_token");
