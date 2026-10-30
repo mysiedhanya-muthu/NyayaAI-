@@ -1,8 +1,19 @@
-const API_BASE = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api` 
-  : (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
-    ? "/api"
-    : "http://127.0.0.1:8000/api";
+function resolveApiBase() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    const cleanUrl = envUrl.trim().replace(/\/$/, "");
+    const fullUrl = cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")
+      ? cleanUrl
+      : `https://${cleanUrl}`;
+    return `${fullUrl}/api`;
+  }
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+    return "/api";
+  }
+  return "http://127.0.0.1:8000/api";
+}
+
+const API_BASE = resolveApiBase();
 
 function getAuthHeader() {
   const token = localStorage.getItem("nyaya_token");
